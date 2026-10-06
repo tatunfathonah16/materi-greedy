@@ -1,0 +1,760 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Quiz Interaktif - Algoritma Greedy</title>
+<style>
+    * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+        font-family: 'Segoe UI', 'Poppins', system-ui, sans-serif;
+    }
+
+    body {
+        min-height: 100vh;
+        background: linear-gradient(145deg, #e6f0ff 0%, #ffffff 40%, #fff9e6 100%);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        padding: 20px;
+        position: relative;
+        overflow-x: hidden;
+    }
+
+    /* === BACKGROUND ANIME === */
+    .bg-anime {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        z-index: -2;
+        overflow: hidden;
+        pointer-events: none;
+    }
+
+    .bg-anime .circle {
+        position: absolute;
+        border-radius: 50%;
+        opacity: 0.15;
+        animation: float 12s infinite ease-in-out;
+    }
+
+    .bg-anime .circle:nth-child(1) {
+        width: 400px; height: 400px;
+        background: #4a90e2;
+        top: -100px; left: -100px;
+    }
+
+    .bg-anime .circle:nth-child(2) {
+        width: 300px; height: 300px;
+        background: #f5c542;
+        bottom: -80px; right: -80px;
+        animation-delay: -3s;
+    }
+
+    .bg-anime .circle:nth-child(3) {
+        width: 200px; height: 200px;
+        background: #ffffff;
+        top: 40%; left: 70%;
+        animation-delay: -6s;
+        box-shadow: 0 0 60px rgba(74, 144, 226, 0.3);
+    }
+
+    .bg-anime .circle:nth-child(4) {
+        width: 150px; height: 150px;
+        background: #4a90e2;
+        bottom: 20%; left: 10%;
+        animation-delay: -9s;
+    }
+
+    .bg-anime .particle {
+        position: absolute;
+        width: 6px; height: 6px;
+        background: #f5c542;
+        border-radius: 50%;
+        opacity: 0.4;
+        animation: floatParticle 8s infinite linear;
+    }
+
+    @keyframes float {
+        0%, 100% { transform: translate(0, 0) scale(1); }
+        50% { transform: translate(30px, -30px) scale(1.1); }
+    }
+
+    @keyframes floatParticle {
+        0% { transform: translateY(0) rotate(0deg); opacity: 0.2; }
+        50% { opacity: 0.8; }
+        100% { transform: translateY(-100vh) rotate(360deg); opacity: 0; }
+    }
+
+    /* === CONTAINER QUIZ === */
+    .quiz-container {
+        max-width: 800px;
+        width: 100%;
+        background: rgba(255, 255, 255, 0.8);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        border-radius: 32px;
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25), 0 0 0 1px rgba(255, 255, 255, 0.6);
+        padding: 30px 35px;
+        position: relative;
+        z-index: 1;
+        animation: fadeInUp 0.8s ease-out;
+        overflow: hidden;
+    }
+
+    @keyframes fadeInUp {
+        from { opacity: 0; transform: translateY(30px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* === HEADER QUIZ === */
+    .quiz-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+        padding-bottom: 15px;
+        border-bottom: 3px dashed #4a90e2;
+    }
+
+    .quiz-header h1 {
+        font-size: 1.6rem;
+        font-weight: 800;
+        background: linear-gradient(135deg, #1e3c72, #4a90e2, #f5c542);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .score-display {
+        background: linear-gradient(135deg, #4a90e2, #1e3c72);
+        color: white;
+        padding: 8px 18px;
+        border-radius: 30px;
+        font-weight: 700;
+        font-size: 0.95rem;
+        box-shadow: 0 4px 10px rgba(74, 144, 226, 0.4);
+        animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+        0%, 100% { transform: scale(1); }
+        50% { transform: scale(1.05); }
+    }
+
+    /* === PROGRESS BAR === */
+    .progress-container {
+        width: 100%;
+        height: 10px;
+        background: rgba(74, 144, 226, 0.15);
+        border-radius: 10px;
+        margin-bottom: 25px;
+        overflow: hidden;
+    }
+
+    .progress-bar {
+        height: 100%;
+        width: 0%;
+        background: linear-gradient(90deg, #4a90e2, #f5c542);
+        border-radius: 10px;
+        transition: width 0.5s ease;
+        box-shadow: 0 0 10px rgba(245, 197, 66, 0.5);
+    }
+
+    /* === QUESTION === */
+    .question-box {
+        margin-bottom: 25px;
+        animation: slideIn 0.5s ease;
+    }
+
+    @keyframes slideIn {
+        from { opacity: 0; transform: translateX(-30px); }
+        to { opacity: 1; transform: translateX(0); }
+    }
+
+    .question-number {
+        display: inline-block;
+        background: #f5c542;
+        color: #1e3c72;
+        padding: 4px 14px;
+        border-radius: 20px;
+        font-weight: 700;
+        font-size: 0.8rem;
+        margin-bottom: 10px;
+        animation: bounceIn 0.6s ease;
+    }
+
+    @keyframes bounceIn {
+        0% { transform: scale(0); }
+        50% { transform: scale(1.2); }
+        100% { transform: scale(1); }
+    }
+
+    .question-text {
+        font-size: 1.15rem;
+        font-weight: 600;
+        color: #1e3c72;
+        line-height: 1.6;
+        margin-bottom: 20px;
+    }
+
+    /* === OPTIONS === */
+    .options {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .option-btn {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        padding: 14px 20px;
+        background: rgba(255, 255, 255, 0.7);
+        border: 2px solid rgba(74, 144, 226, 0.2);
+        border-radius: 16px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        text-align: left;
+        font-size: 1rem;
+        color: #2c3e50;
+        position: relative;
+        overflow: hidden;
+        animation: slideInRight 0.4s ease backwards;
+    }
+
+    .option-btn:nth-child(1) { animation-delay: 0.05s; }
+    .option-btn:nth-child(2) { animation-delay: 0.1s; }
+    .option-btn:nth-child(3) { animation-delay: 0.15s; }
+    .option-btn:nth-child(4) { animation-delay: 0.2s; }
+    .option-btn:nth-child(5) { animation-delay: 0.25s; }
+
+    @keyframes slideInRight {
+        from { opacity: 0; transform: translateX(30px); }
+        to { opacity: 1; transform: translateX(0); }
+    }
+
+    .option-btn:hover:not(:disabled) {
+        background: rgba(74, 144, 226, 0.1);
+        border-color: #4a90e2;
+        transform: translateX(8px);
+        box-shadow: 0 5px 15px rgba(74, 144, 226, 0.2);
+    }
+
+    .option-btn:disabled {
+        cursor: not-allowed;
+        opacity: 0.85;
+    }
+
+    .option-label {
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #4a90e2, #1e3c72);
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+        font-size: 1rem;
+        flex-shrink: 0;
+        transition: all 0.3s ease;
+    }
+
+    .option-btn.correct {
+        background: rgba(46, 204, 113, 0.15);
+        border-color: #2ecc71;
+        animation: correctPulse 0.6s ease;
+    }
+
+    .option-btn.correct .option-label {
+        background: linear-gradient(135deg, #2ecc71, #27ae60);
+    }
+
+    .option-btn.wrong {
+        background: rgba(231, 76, 60, 0.15);
+        border-color: #e74c3c;
+        animation: shake 0.5s ease;
+    }
+
+    .option-btn.wrong .option-label {
+        background: linear-gradient(135deg, #e74c3c, #c0392b);
+    }
+
+    @keyframes correctPulse {
+        0% { transform: scale(1); }
+        50% { transform: scale(1.03); box-shadow: 0 0 20px rgba(46, 204, 113, 0.5); }
+        100% { transform: scale(1); }
+    }
+
+    @keyframes shake {
+        0%, 100% { transform: translateX(0); }
+        25% { transform: translateX(-8px); }
+        75% { transform: translateX(8px); }
+    }
+
+    /* === FEEDBACK === */
+    .feedback {
+        margin-top: 20px;
+        padding: 15px 20px;
+        border-radius: 16px;
+        font-weight: 500;
+        display: none;
+        animation: fadeIn 0.5s ease;
+    }
+
+    .feedback.show {
+        display: block;
+    }
+
+    .feedback.correct-fb {
+        background: rgba(46, 204, 113, 0.15);
+        border-left: 5px solid #2ecc71;
+        color: #1e7e34;
+    }
+
+    .feedback.wrong-fb {
+        background: rgba(231, 76, 60, 0.15);
+        border-left: 5px solid #e74c3c;
+        color: #a93226;
+    }
+
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* === NEXT BUTTON === */
+    .next-btn {
+        display: none;
+        margin-top: 20px;
+        padding: 14px 40px;
+        background: linear-gradient(135deg, #4a90e2, #1e3c72);
+        color: white;
+        border: none;
+        border-radius: 40px;
+        font-size: 1rem;
+        font-weight: 700;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        box-shadow: 0 8px 20px rgba(74, 144, 226, 0.3);
+        animation: fadeInUp 0.5s ease;
+    }
+
+    .next-btn:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 12px 25px rgba(74, 144, 226, 0.5);
+    }
+
+    .next-btn.show {
+        display: inline-block;
+    }
+
+    /* === RESULT SCREEN === */
+    .result-screen {
+        display: none;
+        text-align: center;
+        padding: 20px 0;
+        animation: fadeInUp 0.6s ease;
+    }
+
+    .result-screen.show {
+        display: block;
+    }
+
+    .result-screen h2 {
+        font-size: 2rem;
+        background: linear-gradient(135deg, #1e3c72, #4a90e2, #f5c542);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        margin-bottom: 15px;
+    }
+
+    .result-score {
+        font-size: 4rem;
+        font-weight: 900;
+        color: #4a90e2;
+        margin: 20px 0;
+        animation: bounceIn 0.8s ease;
+        text-shadow: 0 5px 15px rgba(74, 144, 226, 0.3);
+    }
+
+    .result-message {
+        font-size: 1.1rem;
+        color: #2c3e50;
+        margin-bottom: 25px;
+        line-height: 1.6;
+    }
+
+    .restart-btn {
+        padding: 14px 40px;
+        background: linear-gradient(135deg, #f5c542, #d4a017);
+        color: #1e3c72;
+        border: none;
+        border-radius: 40px;
+        font-size: 1rem;
+        font-weight: 700;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        box-shadow: 0 8px 20px rgba(245, 197, 66, 0.4);
+    }
+
+    .restart-btn:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 12px 25px rgba(245, 197, 66, 0.6);
+    }
+
+    /* === RESPONSIVE === */
+    @media (max-width: 600px) {
+        .quiz-container {
+            padding: 20px;
+            border-radius: 24px;
+        }
+        .quiz-header h1 {
+            font-size: 1.2rem;
+        }
+        .question-text {
+            font-size: 1rem;
+        }
+        .option-btn {
+            padding: 12px 15px;
+            font-size: 0.9rem;
+        }
+        .result-score {
+            font-size: 3rem;
+        }
+    }
+</style>
+</head>
+<body>
+
+<!-- BACKGROUND -->
+<div class="bg-anime">
+    <div class="circle"></div>
+    <div class="circle"></div>
+    <div class="circle"></div>
+    <div class="circle"></div>
+</div>
+
+<div class="quiz-container">
+    <!-- HEADER -->
+    <div class="quiz-header">
+        <h1>🧠 Quiz Algoritma Greedy</h1>
+        <div class="score-display" id="scoreDisplay">Skor: 0</div>
+    </div>
+
+    <!-- PROGRESS -->
+    <div class="progress-container">
+        <div class="progress-bar" id="progressBar"></div>
+    </div>
+
+    <!-- QUIZ AREA -->
+    <div id="quizArea">
+        <div class="question-box">
+            <span class="question-number" id="questionNumber">Soal 1 dari 10</span>
+            <div class="question-text" id="questionText"></div>
+        </div>
+
+        <div class="options" id="optionsContainer"></div>
+
+        <div class="feedback" id="feedback"></div>
+        <button class="next-btn" id="nextBtn">Soal Berikutnya →</button>
+    </div>
+
+    <!-- RESULT AREA -->
+    <div class="result-screen" id="resultScreen">
+        <h2>🎉 Quiz Selesai!</h2>
+        <div class="result-score" id="finalScore">0/10</div>
+        <div class="result-message" id="resultMessage"></div>
+        <button class="restart-btn" id="restartBtn">🔄 Ulangi Quiz</button>
+    </div>
+</div>
+
+<script>
+    // === DATA SOAL ===
+    const questions = [
+        {
+            question: "Apa yang dimaksud dengan algoritma greedy?",
+            options: [
+                "Algoritma yang mencari solusi dengan mempertimbangkan semua kemungkinan",
+                "Algoritma yang mencari solusi terbaik secara lokal pada setiap tahapan",
+                "Algoritma yang selalu menghasilkan solusi optimal global",
+                "Algoritma yang bekerja mundur dari solusi akhir",
+                "Algoritma yang menggunakan rekursi tanpa henti"
+            ],
+            correct: 1,
+            explanation: "Algoritma greedy mencari solusi terbaik secara lokal pada setiap tahapan, dengan harapan solusi lokal tersebut menghasilkan solusi optimal global."
+        },
+        {
+            question: "Prinsip utama algoritma greedy yang paling terkenal adalah...",
+            options: [
+                "Divide and conquer",
+                "Take what you can get now!",
+                "Backtracking",
+                "Dynamic programming",
+                "Breadth-first search"
+            ],
+            correct: 1,
+            explanation: "Prinsip greedy adalah 'Take what you can get now!' yaitu mengambil apa yang bisa didapatkan sekarang tanpa memikirkan konsekuensi masa depan."
+        },
+        {
+            question: "Pada masalah pengembalian uang Rp38.000 dengan pecahan {20.000, 10.000, 5.000, 2.000, 1.000}, berapa jumlah lembar minimal yang dihasilkan algoritma greedy?",
+            options: [
+                "3 lembar",
+                "4 lembar",
+                "5 lembar",
+                "6 lembar",
+                "7 lembar"
+            ],
+            correct: 2,
+            explanation: "Greedy memilih: 20.000 + 10.000 + 5.000 + 2.000 + 1.000 = 5 lembar. Ini adalah solusi optimal."
+        },
+        {
+            question: "Dalam masalah Fractional Knapsack, langkah pertama algoritma greedy adalah...",
+            options: [
+                "Mengurutkan item berdasarkan berat terkecil",
+                "Menghitung rasio nilai per berat untuk setiap item",
+                "Memilih item dengan nilai terbesar",
+                "Memilih item dengan berat terbesar",
+                "Mengurutkan item berdasarkan nama"
+            ],
+            correct: 1,
+            explanation: "Langkah pertama adalah menghitung rasio nilai per berat (value-per-weight ratio), lalu mengurutkan dari rasio tertinggi."
+        },
+        {
+            question: "Berapa jumlah langkah minimal untuk memindahkan 6 panekuk pada Menara Hanoi?",
+            options: [
+                "31 langkah",
+                "32 langkah",
+                "63 langkah",
+                "64 langkah",
+                "127 langkah"
+            ],
+            correct: 2,
+            explanation: "Rumus Menara Hanoi adalah 2^N - 1. Untuk N=6: 2^6 - 1 = 64 - 1 = 63 langkah."
+        },
+        {
+            question: "Pada barisan Fibonacci, jika a1=1 dan a2=1, berapakah nilai a5?",
+            options: [
+                "3",
+                "5",
+                "8",
+                "13",
+                "21"
+            ],
+            correct: 1,
+            explanation: "a3 = a2 + a1 = 1+1=2, a4 = a3 + a2 = 2+1=3, a5 = a4 + a3 = 3+2=5."
+        },
+        {
+            question: "Apa perbedaan utama antara algoritma greedy dan dynamic programming?",
+            options: [
+                "Greedy selalu optimal, DP tidak",
+                "Greedy mempertimbangkan semua kemungkinan, DP tidak",
+                "Greedy membuat pilihan terbaik lokal, DP mempertimbangkan semua kemungkinan",
+                "Greedy menggunakan rekursi, DP tidak",
+                "Greedy lebih lambat dari DP"
+            ],
+            correct: 2,
+            explanation: "Greedy membuat pilihan terbaik pada setiap langkah tanpa melihat ke depan, sedangkan DP mempertimbangkan semua kemungkinan dan dampaknya."
+        },
+        {
+            question: "Pada masalah lantai 2×N dengan keramik 1×2, berapa cara memasang untuk N=4?",
+            options: [
+                "3 cara",
+                "4 cara",
+                "5 cara",
+                "6 cara",
+                "8 cara"
+            ],
+            correct: 2,
+            explanation: "Pola Fibonacci: C(1)=1, C(2)=2, C(3)=3, C(4)=5. Jadi ada 5 cara."
+        },
+        {
+            question: "Dalam contoh Fractional Knapsack dengan kapasitas 15 kg dan item A(2kg, 20jt), B(3kg, 15jt), C(5kg, 50jt), D(6kg, 30jt), berapa total nilai maksimum?",
+            options: [
+                "Rp 100 juta",
+                "Rp 105 juta",
+                "Rp 110 juta",
+                "Rp 115 juta",
+                "Rp 120 juta"
+            ],
+            correct: 2,
+            explanation: "Rasio: A=10, C=10, B=5, D=5. Ambil A(2kg), C(5kg), B(3kg), lalu sebagian D(5kg). Total = 20+50+15+25 = 110 juta."
+        },
+        {
+            question: "Pada contoh soal rekursif c_k = (c_{k-1} + k)(c_{k-2} + 1) dengan c0=1 dan c1=2, berapakah nilai c5?",
+            options: [
+                "1.492",
+                "2.492",
+                "11.492",
+                "12.492",
+                "21.492"
+            ],
+            correct: 2,
+            explanation: "c2=8, c3=33, c4=333, c5=(333+5)(33+1)=338×34=11.492."
+        }
+    ];
+
+    // === STATE ===
+    let currentQuestion = 0;
+    let score = 0;
+    let answered = false;
+
+    // === ELEMEN ===
+    const questionNumberEl = document.getElementById('questionNumber');
+    const questionTextEl = document.getElementById('questionText');
+    const optionsContainer = document.getElementById('optionsContainer');
+    const feedbackEl = document.getElementById('feedback');
+    const nextBtn = document.getElementById('nextBtn');
+    const progressBar = document.getElementById('progressBar');
+    const scoreDisplay = document.getElementById('scoreDisplay');
+    const quizArea = document.getElementById('quizArea');
+    const resultScreen = document.getElementById('resultScreen');
+    const finalScore = document.getElementById('finalScore');
+    const resultMessage = document.getElementById('resultMessage');
+    const restartBtn = document.getElementById('restartBtn');
+
+    // === FUNGSI LOAD SOAL ===
+    function loadQuestion() {
+        answered = false;
+        const q = questions[currentQuestion];
+
+        // Update nomor soal
+        questionNumberEl.textContent = `Soal ${currentQuestion + 1} dari ${questions.length}`;
+        
+        // Update teks soal
+        questionTextEl.textContent = q.question;
+        questionTextEl.style.animation = 'none';
+        void questionTextEl.offsetWidth;
+        questionTextEl.style.animation = 'slideIn 0.5s ease';
+
+        // Update progress
+        progressBar.style.width = ((currentQuestion) / questions.length) * 100 + '%';
+
+        // Render opsi
+        optionsContainer.innerHTML = '';
+        const labels = ['A', 'B', 'C', 'D', 'E'];
+        q.options.forEach((opt, idx) => {
+            const btn = document.createElement('button');
+            btn.className = 'option-btn';
+            btn.innerHTML = `
+                <span class="option-label">${labels[idx]}</span>
+                <span>${opt}</span>
+            `;
+            btn.addEventListener('click', () => selectAnswer(idx, btn));
+            optionsContainer.appendChild(btn);
+        });
+
+        // Reset feedback & next button
+        feedbackEl.className = 'feedback';
+        feedbackEl.textContent = '';
+        nextBtn.classList.remove('show');
+    }
+
+    // === FUNGSI PILIH JAWABAN ===
+    function selectAnswer(idx, btn) {
+        if (answered) return;
+        answered = true;
+
+        const q = questions[currentQuestion];
+        const allBtns = document.querySelectorAll('.option-btn');
+
+        // Nonaktifkan semua tombol
+        allBtns.forEach(b => b.disabled = true);
+
+        // Cek jawaban
+        if (idx === q.correct) {
+            btn.classList.add('correct');
+            score++;
+            scoreDisplay.textContent = `Skor: ${score}`;
+            scoreDisplay.style.animation = 'none';
+            void scoreDisplay.offsetWidth;
+            scoreDisplay.style.animation = 'pulse 0.5s ease';
+            
+            feedbackEl.className = 'feedback show correct-fb';
+            feedbackEl.innerHTML = `✅ <strong>Benar!</strong> ${q.explanation}`;
+        } else {
+            btn.classList.add('wrong');
+            // Tandai jawaban benar
+            allBtns[q.correct].classList.add('correct');
+            
+            feedbackEl.className = 'feedback show wrong-fb';
+            feedbackEl.innerHTML = `❌ <strong>Kurang tepat.</strong> Jawaban yang benar adalah <strong>${['A','B','C','D','E'][q.correct]}</strong>. ${q.explanation}`;
+        }
+
+        // Tampilkan tombol next
+        nextBtn.classList.add('show');
+        nextBtn.textContent = currentQuestion === questions.length - 1 ? 'Lihat Hasil 🏆' : 'Soal Berikutnya →';
+    }
+
+    // === FUNGSI NEXT ===
+    nextBtn.addEventListener('click', () => {
+        currentQuestion++;
+        if (currentQuestion < questions.length) {
+            loadQuestion();
+        } else {
+            showResult();
+        }
+    });
+
+    // === FUNGSI HASIL ===
+    function showResult() {
+        quizArea.style.display = 'none';
+        resultScreen.classList.add('show');
+        
+        finalScore.textContent = `${score}/${questions.length}`;
+        progressBar.style.width = '100%';
+
+        const percentage = (score / questions.length) * 100;
+        if (percentage === 100) {
+            resultMessage.innerHTML = '🌟 <strong>Sempurna!</strong> Kamu menguasai Algoritma Greedy dengan sangat baik!';
+        } else if (percentage >= 80) {
+            resultMessage.innerHTML = '🎯 <strong>Hebat!</strong> Pemahamanmu tentang Algoritma Greedy sudah sangat baik.';
+        } else if (percentage >= 60) {
+            resultMessage.innerHTML = '👍 <strong>Bagus!</strong> Terus pelajari materi untuk meningkatkan pemahamanmu.';
+        } else if (percentage >= 40) {
+            resultMessage.innerHTML = '📚 <strong>Cukup.</strong> Pelajari kembali konsep dasar Algoritma Greedy, Knapsack, dan Rekursi.';
+        } else {
+            resultMessage.innerHTML = '💪 <strong>Jangan menyerah!</strong> Baca kembali materi dan coba lagi.';
+        }
+    }
+
+    // === FUNGSI RESTART ===
+    restartBtn.addEventListener('click', () => {
+        currentQuestion = 0;
+        score = 0;
+        scoreDisplay.textContent = 'Skor: 0';
+        progressBar.style.width = '0%';
+        quizArea.style.display = 'block';
+        resultScreen.classList.remove('show');
+        loadQuestion();
+    });
+
+    // === INISIALISASI ===
+    loadQuestion();
+
+    // === PARTIKEL BACKGROUND ===
+    const bgAnime = document.querySelector('.bg-anime');
+    for (let i = 0; i < 12; i++) {
+        const particle = document.createElement('div');
+        particle.className = 'particle';
+        particle.style.left = Math.random() * 100 + '%';
+        particle.style.top = Math.random() * 100 + '%';
+        particle.style.animationDelay = Math.random() * 8 + 's';
+        particle.style.animationDuration = (6 + Math.random() * 6) + 's';
+        particle.style.width = (3 + Math.random() * 5) + 'px';
+        particle.style.height = particle.style.width;
+        particle.style.background = Math.random() > 0.5 ? '#f5c542' : '#4a90e2';
+        bgAnime.appendChild(particle);
+    }
+</script>
+</body>
+</html>
